@@ -1,0 +1,108 @@
+version: '3'
+
+
+services:
+  # ZooKeeper (необходим для работы Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181  # порт для клиентских подключений
+      ZOOKEEPER_TICK_TIME: 2000    # время между тиками (ms)
+    ports:
+      - "2181:2181" 
+    networks:
+      - kafka_net
+
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    restart: unless-stopped
+    depends_on:
+      - zookeeper  # Зависит от ZooKeeper
+    environment:
+      KAFKA_BROKER_ID: 1  # Идентификатор брокера
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Подключение к ZooKeeper
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Фактор репликации для внутренних топиков
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"   # Запрещаем автосоздание топиков
+      KAFKA_NUM_PARTITIONS: 2  # Количество партиций по умолчанию для новых топиков
+      KAFKA_CLUSTER_ID: "${KAFKA_CLUSTER_ID}" # или любой другой фиксированный ID для корректной работы при перезапуске
+    ports:
+      - "9092:9092"  
+    volumes:
+      - kafka_data:/var/lib/kafka/data 
+    networks:
+      - kafka_net
+      - observability_net
+
+
+  # Prometheus для сбора метрик
+  prometheus:
+    image: prom/prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"  
+    volumes:
+      - ./configs/prometheus:/etc/prometheus  
+    networks:
+      - observability_net
+
+
+  # Alertmanager
+  alertmanager:
+    image: prom/alertmanager:v0.28.0
+    restart: unless-stopped
+    # копируем шаблон
+    volumes:
+      - ./configs/prometheus/alertmanager.template.yml:/etc/alertmanager/template.yml
+      - ./scripts/alertmanager.sh:/alertmanager.sh
+    ports:
+      - "9093:9093"
+    environment:
+      - SMTP_USER=${SMTP_USER_MAIN}  # от кого слать уведомления
+      - SMTP_RECEIVER=${SMTP_USER_MAIN} # кому слать уведомления
+      - SMTP_PASSWORD=${SMTP_PASSWORD_LOYALTY_HUB} # пароль
+    # делаем подстановку переменных окружения в шаблон конфига 
+    entrypoint: /alertmanager.sh
+    command: /bin/alertmanager --config.file=/etc/alertmanager/alertmanager.yml
+    networks:
+      - observability_net
+
+
+  # Grafana для визуализации метрик
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_INSTANCE_NAME=my-grafana
+    volumes:
+      - grafana_storage:/var/lib/grafana
+    networks:
+      - observability_net
+
+
+networks:
+  # сеть для мониторинга и инфраструктуры
+  observability_net:
+    driver: bridge
+    name: observability_net
+  # сеть для общения сервисов между собой
+  kafka_net:
+    driver: bridge
+    name: kafka_net
+
+
+volumes:
+  grafana_storage:  # хранилище графана
+  kafka_data:       # хранилище кафка
+  
+

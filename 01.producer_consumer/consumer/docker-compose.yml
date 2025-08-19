@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  # Сервис консьюмера (собирается из Dockerfile.consumer)
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    expose:
+      - "${METRICS_PORT}"
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      LOG_FILE: "/app/logs/events.log"
+    volumes:
+      - ./logs/events.log:/app/logs/events.log  # Пробрасываем 
+    networks:
+      - kafka_net
+      - observability_net
+
+
+networks:
+  observability_net:
+    external: true
+  kafka_net:
+    external: true
+
+
+

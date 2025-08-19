@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  # Сервис продюсера (собирается из Dockerfile.producer)
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure  # перезапуск при ошибках
+    expose:
+      - "${METRICS_PORT}"
+    environment:
+      KAFKA_BROKERS: "kafka:9092"  
+    networks:
+      - kafka_net
+      - observability_net
+
+
+networks:
+  observability_net:
+    external: true
+  kafka_net:
+    external: true

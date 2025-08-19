@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"itk/lessons/07.kafka/02.Outbox/booking/database"
+	"github.com/anarakinson/go_kafka_exercises/02.outbox/booking/database"
 
 	"github.com/anarakinson/go_stonks/stonks_shared/pkg/logger"
 	"github.com/joho/godotenv"
@@ -67,6 +67,7 @@ func main() {
 	if err != nil {
 		logger.Log.Error("Error connecting to database", zap.Error(err))
 	}
+	defer db.Close()
 
 	//--------------------------------------------//
 	// создаем топик в кафке

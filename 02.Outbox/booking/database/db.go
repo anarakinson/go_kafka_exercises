@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	"github.com/anarakinson/go_stonks/stonks_shared/pkg/logger"
-	_ "github.com/jackc/pgx/v5/stdlib"
-) // Драйвер PostgreSQL
+	_ "github.com/jackc/pgx/v5/stdlib" // Драйвер PostgreSQL
+) 
 
 type DataBase struct {
 	connection *sql.DB
@@ -25,4 +25,8 @@ func NewDatabase(dsn string) (*DataBase, error) {
 	return &DataBase{
 		connection: db,
 	}, nil
+}
+
+func (db *DataBase) Close() {
+	db.connection.Close()
 }

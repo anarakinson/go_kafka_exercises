@@ -17,6 +17,9 @@
 # environment variables
 .env
 
-./stonks_shared
+grafana_storage
+kafka_data
+zookeeper_data
+postgres_data
 
 task.md

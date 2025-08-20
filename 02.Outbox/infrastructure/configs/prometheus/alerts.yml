@@ -1,0 +1,15 @@
+groups:
+- name: runtime-alerts
+  rules:
+
+  # Старт и остановка приложения
+  # Приложение выключилось (упало)
+  - alert: ApplicationDown
+    expr: up{service=~"order|spot_instrument"} == 0
+    for: 1m  # Длительность состояния перед срабатыванием
+    labels:
+      severity: critical
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "Application is down!"
+      description: "Service {{ $labels.service }} has not sent metrics for more than 1 minute. The service may have crashed or been disabled."

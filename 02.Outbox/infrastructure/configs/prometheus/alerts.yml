@@ -6,7 +6,7 @@ groups:
   # Слишком большое количество горутин
   - alert: TooManyGoroutines
     expr: |
-      sum by (service) (goroutines_total{service=~"order|spot_instrument"}) > 5000
+      sum by (service) (goroutines_total{service=~"booking"}) > 5000
     for: 5m
     labels:
       severity: warning
@@ -18,7 +18,7 @@ groups:
   # Резкий рост горутин
   - alert: GoroutinesSpike
     expr: |
-      (go_goroutines{service=~"order|spot_instrument"} - go_goroutines{service=~"order|spot_instrument"} offset 1m) > 50
+      (go_goroutines{service=~"booking"} - go_goroutines{service=~"booking"} offset 1m) > 50
     # rate(goroutines_total[5m]) > 50
     for: 2m
     labels:
@@ -32,7 +32,7 @@ groups:
   # Память
   # Высокое использование heap-памяти
   - alert: HighHeapMemoryUsage
-    expr: memory_usage_bytes{type="heap", service=~"order|spot_instrument"} > 2 * 1024 * 1024 * 1024  # 2GB
+    expr: memory_usage_bytes{type="heap", service=~"booking"} > 2 * 1024 * 1024 * 1024  # 2GB
     for: 10m
     labels:
       severity: warning
@@ -43,7 +43,7 @@ groups:
 
   # Утечка памяти (постоянный рост)
   - alert: MemoryLeakDetected
-    expr: rate(memory_usage_bytes{type="heap", service=~"order|spot_instrument"}[1h]) > 1024 * 1024  # 1MB/s growth
+    expr: rate(memory_usage_bytes{type="heap", service=~"booking"}[1h]) > 1024 * 1024  # 1MB/s growth
     for: 30m
     labels:
       severity: critical
@@ -55,7 +55,7 @@ groups:
   # Сборка мусора
   # Слишком частый GC (давление на CPU)
   - alert: HighGCRate
-    expr: rate(gc_runs_total{service=~"order|spot_instrument"}[5m]) > 10
+    expr: rate(gc_runs_total{service=~"booking"}[5m]) > 10
     for: 5m
     labels:
       severity: warning
@@ -66,7 +66,7 @@ groups:
 
   # Внезапная остановка GC
   - alert: GCStalled
-    expr: rate(gc_runs_total{service=~"order|spot_instrument"}[15m]) == 0
+    expr: rate(gc_runs_total{service=~"booking"}[15m]) == 0
     for: 15m
     labels:
       severity: critical
@@ -78,9 +78,9 @@ groups:
   # Высокое использование памяти + частый GC
   - alert: MemoryPressure
     expr: |
-      memory_usage_bytes{type="heap", service=~"order|spot_instrument"} > 1.5 * 1024 * 1024 * 1024
+      memory_usage_bytes{type="heap", service=~"booking"} > 1.5 * 1024 * 1024 * 1024
       AND
-      rate(gc_runs_total{service=~"order|spot_instrument"}[5m]) > 5
+      rate(gc_runs_total{service=~"booking"}[5m]) > 5
     for: 10m
     labels:
       severity: critical
@@ -92,7 +92,7 @@ groups:
   # Старт и остановка приложения
   # Приложение выключилось (упало)
   - alert: ApplicationDown
-    expr: up{service=~"order|spot_instrument"} == 0
+    expr: up{service=~"booking"} == 0
     for: 1m  # Длительность состояния перед срабатыванием
     labels:
       severity: critical

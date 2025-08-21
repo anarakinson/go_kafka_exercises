@@ -5,7 +5,7 @@ groups:
   # Старт и остановка приложения
   # Приложение выключилось (упало)
   - alert: ApplicationDown
-    expr: up{service=~"order|spot_instrument"} == 0
+    expr: up{service=~"consumer|producer"} == 0
     for: 1m  # Длительность состояния перед срабатыванием
     labels:
       severity: critical

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/anarakinson/go_kafka_exercises/02.outbox/booking/internal/domain"
+	"github.com/anarakinson/go_kafka_exercises/02.outbox/booking/internal/outbox_metrics"
 	"github.com/anarakinson/go_stonks/stonks_shared/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -64,6 +65,7 @@ func (w *Worker) processOutboxEvents(ctx context.Context, topicName string) {
 		err := w.producer.SendToKafka(topicName, event)
 		if err != nil {
 			logger.Log.Error("Error sending event to Kafka", zap.Error(err))
+			outbox_metrics.EventsFailedTotal.Inc() // Увеличиваем счетчик ошибок
 			continue
 		}
 
@@ -73,12 +75,14 @@ func (w *Worker) processOutboxEvents(ctx context.Context, topicName string) {
 		err = w.repo.MarkEventAsProcessed(ctx, event.EventID)
 		if err != nil {
 			logger.Log.Error("Error marking event as processed in database", zap.Error(err))
+			outbox_metrics.EventsFailedTotal.Inc() // Увеличиваем счетчик ошибок
 			continue
 		}
 		// считаем, сколько упешно обработано
 		counter++
 	}
 
+	outbox_metrics.EventsSentTotal.Inc() // Увеличиваем счетчик успешно отправленных сообщений
 	logger.Log.Info("Events successfully processed", zap.Int("processed_events", counter), zap.Int("total_events", len(events)))
 
 }

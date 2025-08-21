@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  server:
+  booking:
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,6 +12,7 @@ services:
       - "${METRICS_PORT}"
     ports:
       - "8081:8081"
+      - "${METRICS_PORT}:${METRICS_PORT}"
     environment:
       KAFKA_BROKERS: "kafka:9092"  
       POSTGRES_USER: ${POSTGRES_USER}

@@ -10,6 +10,8 @@ COPY . .
 # Скачиваем зависимости
 RUN go mod download
 
+# собираем бинарник, делающий миграции
+RUN CGO_ENABLED=0 GOOS=linux go build -o /migrate ./cmd/migrations/main.go
 # Собираем приложение
 RUN CGO_ENABLED=0 GOOS=linux go build -o /entrypoint ./cmd/app/main.go
 
@@ -19,7 +21,10 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY .env .env
+COPY ./migrations ./migrations/
+
+COPY --from=builder /migrate ./
 COPY --from=builder /entrypoint ./
 
 # Запускаем приложение
-CMD ["./entrypoint"]
+CMD ["sh", "-c", "./migrate && tail -f /app/logs/app.log & ./entrypoint > /app/logs/app.log 2>&1"]

@@ -5,11 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: on-failure  # перезапуск при ошибках
+    restart: always
     depends_on:
       - db
     expose:
       - "${METRICS_PORT}"
+    ports:
+      - "8081:8081"
     environment:
       KAFKA_BROKERS: "kafka:9092"  
       POSTGRES_USER: ${POSTGRES_USER}
@@ -17,10 +19,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
+    volumes:
+      - ./logs/app.log:/app/logs/app.log
     networks:
       - kafka_net
       - observability_net
-
+    
 
   db:
     image: postgres:16-alpine
@@ -33,6 +37,15 @@ services:
       - ./database:/var/lib/postgresql/data  
     ports:
       - "5432:5432"
+    networks:
+      - kafka_net
+      - observability_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 
 networks:
@@ -40,3 +53,4 @@ networks:
     external: true
   kafka_net:
     external: true
+

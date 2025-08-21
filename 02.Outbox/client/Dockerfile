@@ -22,4 +22,7 @@ COPY .env .env
 COPY --from=builder /entrypoint ./
 
 # Запускаем приложение
-CMD ["./entrypoint"]
+# CMD ["./entrypoint"]
+# CMD ["sh", "-c", "./entrypoint > /app/logs/app.log 2>&1"]
+CMD ["sh", "-c", "tail -f /app/logs/app.log & ./entrypoint > /app/logs/app.log 2>&1"]
+

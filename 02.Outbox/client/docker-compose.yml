@@ -10,6 +10,8 @@ services:
       - "${METRICS_PORT}"
     environment:
       KAFKA_BROKERS: "kafka:9092"  
+    volumes:
+      - ./logs/app.log:/app/logs/app.log
     networks:
       - kafka_net
       - observability_net

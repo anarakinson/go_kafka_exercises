@@ -2,6 +2,93 @@ groups:
 - name: runtime-alerts
   rules:
 
+  # Горутины
+  # Слишком большое количество горутин
+  - alert: TooManyGoroutines
+    expr: |
+      sum by (service) (goroutines_total{service=~"order|spot_instrument"}) > 5000
+    for: 5m
+    labels:
+      severity: warning
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "Too many goroutines in {{ $labels.service }}"
+      description: "Service {{ $labels.service }} has {{ $value }} goroutines running for more than 5 minutes."
+  
+  # Резкий рост горутин
+  - alert: GoroutinesSpike
+    expr: |
+      (go_goroutines{service=~"order|spot_instrument"} - go_goroutines{service=~"order|spot_instrument"} offset 1m) > 50
+    # rate(goroutines_total[5m]) > 50
+    for: 2m
+    labels:
+      severity: critical
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "Rapid goroutines growth in {{ $labels.service }}"
+      description: "Service {{ $labels.service }} goroutines spiked by {{ $value }} in 1 minute"
+
+
+  # Память
+  # Высокое использование heap-памяти
+  - alert: HighHeapMemoryUsage
+    expr: memory_usage_bytes{type="heap", service=~"order|spot_instrument"} > 2 * 1024 * 1024 * 1024  # 2GB
+    for: 10m
+    labels:
+      severity: warning
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "High heap memory usage (over 2GB)"
+      description: "Service {{ $labels.service }} - heap memory usage is critically high: {{ $value }}."
+
+  # Утечка памяти (постоянный рост)
+  - alert: MemoryLeakDetected
+    expr: rate(memory_usage_bytes{type="heap", service=~"order|spot_instrument"}[1h]) > 1024 * 1024  # 1MB/s growth
+    for: 30m
+    labels:
+      severity: critical
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "Possible memory leak (growth over 1MB/s)"
+      description: "Service {{ $labels.service }} - memory shows consistent growth over 30 minutes."
+
+  # Сборка мусора
+  # Слишком частый GC (давление на CPU)
+  - alert: HighGCRate
+    expr: rate(gc_runs_total{service=~"order|spot_instrument"}[5m]) > 10
+    for: 5m
+    labels:
+      severity: warning
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "High GC frequency (over 10 runs/s)"
+      description: "Service {{ $labels.service }} - garbage collection is running too frequently: {{ $value }}."
+
+  # Внезапная остановка GC
+  - alert: GCStalled
+    expr: rate(gc_runs_total{service=~"order|spot_instrument"}[15m]) == 0
+    for: 15m
+    labels:
+      severity: critical
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "No GC runs detected"
+      description: "Service {{ $labels.service }} - garbage collector hasn't run for 15 minutes."
+
+  # Высокое использование памяти + частый GC
+  - alert: MemoryPressure
+    expr: |
+      memory_usage_bytes{type="heap", service=~"order|spot_instrument"} > 1.5 * 1024 * 1024 * 1024
+      AND
+      rate(gc_runs_total{service=~"order|spot_instrument"}[5m]) > 5
+    for: 10m
+    labels:
+      severity: critical
+      service: "{{ $labels.service }}"
+    annotations:
+      summary: "Memory pressure detected"
+      description: "Service {{ $labels.service }} - high heap usage with frequent GC."
+
   # Старт и остановка приложения
   # Приложение выключилось (упало)
   - alert: ApplicationDown
@@ -13,3 +100,5 @@ groups:
     annotations:
       summary: "Application is down!"
       description: "Service {{ $labels.service }} has not sent metrics for more than 1 minute. The service may have crashed or been disabled."
+
+  

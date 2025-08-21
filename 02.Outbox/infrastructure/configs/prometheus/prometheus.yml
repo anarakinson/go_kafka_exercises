@@ -17,30 +17,17 @@ scrape_configs:
         replacement: "prometheus"
 
 
-  - job_name: 'producer'
+  - job_name: 'booking'
     scrape_interval: 15s
     scrape_timeout: 15s
     static_configs:
-      - targets: ['producer:9191']
+      - targets: ['booking:9191']
     metrics_path: /metrics
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
       - target_label: service
-        replacement: "producer"
-
-
-  - job_name: 'consumer'
-    scrape_interval: 15s
-    scrape_timeout: 15s
-    static_configs:
-      - targets: ['consumer:9192']
-    metrics_path: /metrics
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-      - target_label: service
-        replacement: "consumer"
+        replacement: "booking"
 
 
 rule_files:

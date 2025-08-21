@@ -21,5 +21,6 @@ grafana_storage
 kafka_data
 zookeeper_data
 postgres_data
+app.log
 
 task.md
